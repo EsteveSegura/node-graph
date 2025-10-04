@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, reactive, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { computed, ref, reactive, onMounted, onBeforeUnmount, onUpdated, nextTick, watch } from 'vue'
 import { useConversationStore } from '../stores/conversation'
 
 const props = defineProps({
@@ -55,9 +55,17 @@ const edges = reactive({
 })
 
 let resizeObs = null
+let rafId = 0
 
 const CONNECTOR_OFFSET_UP = 6    // pequeñísimo margen para no pisar el punto del hijo
 const CONNECTOR_OFFSET_DOWN = 6  // margen para no pisar el punto del padre
+
+function scheduleCompute() {
+  cancelAnimationFrame(rafId)
+  rafId = requestAnimationFrame(() => {
+    computeEdges()
+  })
+}
 
 function computeEdges() {
   nextTick(() => {
@@ -135,11 +143,19 @@ function setupObservers() {
   cleanupObservers()
   if (!containerRef.value) return
 
-  resizeObs = new ResizeObserver(() => computeEdges())
+  resizeObs = new ResizeObserver(() => scheduleCompute())
   resizeObs.observe(containerRef.value)
 
   // También observamos el propio box del padre (cambios por textarea)
   if (parentBoxRef.value) resizeObs.observe(parentBoxRef.value)
+
+  // 🔑 Observar los hijos directos (sus cajas) para detectar cambios de alto/ancho
+  const childBoxes = containerRef.value.querySelectorAll(':scope > .children-container .node-box')
+  childBoxes.forEach(el => resizeObs.observe(el))
+
+  // También observar el contenedor de hijos por cambios de layout
+  const childrenContainer = containerRef.value.querySelector(':scope > .children-container')
+  if (childrenContainer) resizeObs.observe(childrenContainer)
 }
 
 function cleanupObservers() {
@@ -151,23 +167,30 @@ function cleanupObservers() {
 
 onMounted(() => {
   setupObservers()
-  computeEdges()
+  scheduleCompute()
+})
+
+// Recalcular tras cualquier update del componente
+onUpdated(() => {
+  scheduleCompute()
 })
 
 // Recalcular cuando cambia el número de hijos (añadir/eliminar)
 watch(() => node.value?.children?.length, () => {
-  computeEdges()
-  // pequeño nextTick por si se montan nuevos hijos
-  nextTick(() => computeEdges())
+  nextTick(() => {
+    setupObservers()  // reatacha a los nuevos .child .node-box
+    scheduleCompute() // mide en el frame siguiente
+  })
 })
 
 // Recalcular en resize de ventana
-const onWinResize = () => computeEdges()
+const onWinResize = () => scheduleCompute()
 if (typeof window !== 'undefined') {
   window.addEventListener('resize', onWinResize)
 }
 
 onBeforeUnmount(() => {
+  cancelAnimationFrame(rafId)
   cleanupObservers()
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', onWinResize)
