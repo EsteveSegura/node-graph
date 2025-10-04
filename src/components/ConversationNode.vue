@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, reactive, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useConversationStore } from '../stores/conversation'
 
 const props = defineProps({
@@ -12,7 +12,6 @@ const props = defineProps({
 const store = useConversationStore()
 
 const node = computed(() => store.getNodeById(props.nodeId))
-
 const canAddLlm = computed(() => store.canAddLlmChild(props.nodeId))
 
 const nodeTypeLabel = computed(() => {
@@ -43,11 +42,174 @@ const handleAddLlmChild = () => {
 const handleUpdateText = (event) => {
   store.updateText(props.nodeId, event.target.value)
 }
+
+/* ---------------------------- Líneas (SVG) ---------------------------- */
+const containerRef = ref(null)     // raíz del nodo actual
+const parentBoxRef = ref(null)     // .node-box del nodo actual
+
+const svgSize = reactive({ width: 0, height: 0 })
+const edges = reactive({
+  trunk: null,          // {x1,y1,x2,y2}
+  bar: null,            // {x1,y1,x2,y2}
+  branches: []          // array de {x1,y1,x2,y2}
+})
+
+let resizeObs = null
+
+const CONNECTOR_OFFSET_UP = 6    // pequeñísimo margen para no pisar el punto del hijo
+const CONNECTOR_OFFSET_DOWN = 6  // margen para no pisar el punto del padre
+
+function computeEdges() {
+  nextTick(() => {
+    const containerEl = containerRef.value
+    const parentEl = parentBoxRef.value
+    if (!containerEl || !parentEl || !node.value) {
+      edges.trunk = null
+      edges.bar = null
+      edges.branches = []
+      return
+    }
+
+    // Medidas del contenedor para el viewBox/coords relativas
+    svgSize.width = containerEl.offsetWidth
+    svgSize.height = containerEl.offsetHeight
+
+    const containerRect = containerEl.getBoundingClientRect()
+    const parentRect = parentEl.getBoundingClientRect()
+    const parentCenterX = parentRect.left - containerRect.left + parentRect.width / 2
+    const parentBottomY = parentRect.bottom - containerRect.top
+
+    // OJO: los hijos directos son componentes con clase "child-column" en su raíz.
+    const childContainers = containerEl.querySelectorAll(':scope > .children-container > .child-column')
+    const childBoxes = Array.from(childContainers)
+      .map(c => c.querySelector('.node-box'))
+      .filter(Boolean)
+
+    if (!childBoxes.length) {
+      edges.trunk = null
+      edges.bar = null
+      edges.branches = []
+      return
+    }
+
+    const childCentersX = childBoxes.map(b => {
+      const r = b.getBoundingClientRect()
+      return r.left - containerRect.left + r.width / 2
+    })
+    const childTopYs = childBoxes.map(b => b.getBoundingClientRect().top - containerRect.top)
+
+    // Altura de la barra: un poco por encima del tope del/los hijos
+    const barY = Math.min(...childTopYs) - CONNECTOR_OFFSET_UP
+
+    // El tronco baja desde el centro del padre hasta la barra
+    edges.trunk = {
+      x1: parentCenterX,
+      y1: parentBottomY + CONNECTOR_OFFSET_DOWN,
+      x2: parentCenterX,
+      y2: barY
+    }
+
+    // La barra debe cubrir desde el punto más a la izquierda hasta el más a la derecha
+    // incluyendo también la x del padre para garantizar la conexión.
+    const minX = Math.min(parentCenterX, ...childCentersX)
+    const maxX = Math.max(parentCenterX, ...childCentersX)
+
+    edges.bar = {
+      x1: minX,
+      y1: barY,
+      x2: maxX,
+      y2: barY
+    }
+
+    // Ramitas verticales desde la barra hasta el top de cada hijo
+    edges.branches = childCentersX.map((x, i) => ({
+      x1: x,
+      y1: barY,
+      x2: x,
+      y2: childTopYs[i] - CONNECTOR_OFFSET_UP
+    }))
+  })
+}
+
+function setupObservers() {
+  cleanupObservers()
+  if (!containerRef.value) return
+
+  resizeObs = new ResizeObserver(() => computeEdges())
+  resizeObs.observe(containerRef.value)
+
+  // También observamos el propio box del padre (cambios por textarea)
+  if (parentBoxRef.value) resizeObs.observe(parentBoxRef.value)
+}
+
+function cleanupObservers() {
+  if (resizeObs) {
+    resizeObs.disconnect()
+    resizeObs = null
+  }
+}
+
+onMounted(() => {
+  setupObservers()
+  computeEdges()
+})
+
+// Recalcular cuando cambia el número de hijos (añadir/eliminar)
+watch(() => node.value?.children?.length, () => {
+  computeEdges()
+  // pequeño nextTick por si se montan nuevos hijos
+  nextTick(() => computeEdges())
+})
+
+// Recalcular en resize de ventana
+const onWinResize = () => computeEdges()
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', onWinResize)
+}
+
+onBeforeUnmount(() => {
+  cleanupObservers()
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', onWinResize)
+  }
+})
 </script>
 
 <template>
-  <div v-if="node" class="node-container">
-    <div class="node-box" :class="[`node-${node.type}`, { 'has-children': node.children.length > 0 }]">
+  <div v-if="node" class="node-container child-column" ref="containerRef">
+    <!-- Capa SVG para las líneas -->
+    <svg
+      v-if="node.children.length > 0"
+      class="edges-svg"
+      :viewBox="`0 0 ${svgSize.width} ${svgSize.height}`"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <!-- Tronco vertical -->
+      <line
+        v-if="edges.trunk"
+        :x1="edges.trunk.x1" :y1="edges.trunk.y1"
+        :x2="edges.trunk.x2" :y2="edges.trunk.y2"
+        class="edge-line"
+      />
+      <!-- Barra horizontal -->
+      <line
+        v-if="edges.bar && edges.bar.x1 !== edges.bar.x2"
+        :x1="edges.bar.x1" :y1="edges.bar.y1"
+        :x2="edges.bar.x2" :y2="edges.bar.y2"
+        class="edge-line"
+      />
+      <!-- Ramitas a cada hijo -->
+      <line
+        v-for="(b, i) in edges.branches"
+        :key="i"
+        :x1="b.x1" :y1="b.y1"
+        :x2="b.x2" :y2="b.y2"
+        class="edge-line"
+      />
+    </svg>
+
+    <div class="node-box" ref="parentBoxRef" :class="[`node-${node.type}`, { 'has-children': node.children.length > 0 }]">
       <div class="node-header">
         <span class="node-type">{{ nodeTypeLabel }}</span>
         <span class="node-id">{{ node.id }}</span>
@@ -82,7 +244,7 @@ const handleUpdateText = (event) => {
       </div>
     </div>
 
-    <!-- Contenedor horizontal para hijos -->
+    <!-- Hijos (horizontal) -->
     <div v-if="node.children.length > 0" class="children-container">
       <ConversationNode
         v-for="childId in node.children"
@@ -95,7 +257,9 @@ const handleUpdateText = (event) => {
 </template>
 
 <style scoped>
+/* --- Layout del nodo --- */
 .node-container {
+  position: relative; /* necesario para posicionar el SVG encima */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -110,6 +274,7 @@ const handleUpdateText = (event) => {
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   position: relative;
+  z-index: 2; /* por encima de las líneas */
 }
 
 /* Punto conector inferior - para nodos con hijos */
@@ -124,7 +289,7 @@ const handleUpdateText = (event) => {
   background: #888;
   border-radius: 50%;
   border: 2px solid white;
-  z-index: 2;
+  z-index: 3;
 }
 
 .node-system {
@@ -215,11 +380,13 @@ const handleUpdateText = (event) => {
   gap: 40px;
   align-items: flex-start;
   margin-top: 20px;
+  position: relative; /* opcional, por si quieres más control local */
 }
 
 .child-column {
   flex: 0 0 auto;
   position: relative;
+  z-index: 2; /* por encima de las líneas */
 }
 
 /* Punto conector superior - para todos los nodos hijo */
@@ -234,6 +401,23 @@ const handleUpdateText = (event) => {
   background: #888;
   border-radius: 50%;
   border: 2px solid white;
-  z-index: 2;
+  z-index: 3;
+}
+
+/* --- Capa de líneas --- */
+.edges-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;           /* debajo de las cajas y puntos */
+  pointer-events: none; /* no bloquear clics */
+}
+
+.edge-line {
+  stroke: #B0B0B0;
+  stroke-width: 2;
+  stroke-linecap: round;
+  shape-rendering: geometricPrecision;
 }
 </style>
