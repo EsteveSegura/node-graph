@@ -47,7 +47,7 @@ const handleUpdateText = (event) => {
 
 <template>
   <div v-if="node" class="node-container">
-    <div class="node-box" :class="`node-${node.type}`">
+    <div class="node-box" :class="[`node-${node.type}`, { 'has-children': node.children.length > 0 }]">
       <div class="node-header">
         <span class="node-type">{{ nodeTypeLabel }}</span>
         <span class="node-id">{{ node.id }}</span>
@@ -82,16 +82,8 @@ const handleUpdateText = (event) => {
       </div>
     </div>
 
-    <!-- Guía vertical decorativa -->
-    <div v-if="node.children.length > 0" class="vertical-guide"></div>
-
     <!-- Contenedor horizontal para hijos -->
-    <div
-      v-if="node.children.length > 0"
-      class="children-container"
-      :class="{ 'single-child': node.children.length === 1 }"
-      :style="{ '--child-count': node.children.length }"
-    >
+    <div v-if="node.children.length > 0" class="children-container">
       <ConversationNode
         v-for="childId in node.children"
         :key="childId"
@@ -117,7 +109,22 @@ const handleUpdateText = (event) => {
   padding: 16px;
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin-bottom: 12px;
+  position: relative;
+}
+
+/* Punto conector inferior - para nodos con hijos */
+.node-box.has-children::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  background: #888;
+  border-radius: 50%;
+  border: 2px solid white;
+  z-index: 2;
 }
 
 .node-system {
@@ -202,20 +209,12 @@ const handleUpdateText = (event) => {
   cursor: not-allowed;
 }
 
-.vertical-guide {
-  width: 2px;
-  height: 24px;
-  background: #aaa;
-  margin: 0 auto;
-}
-
 .children-container {
   display: flex;
   flex-direction: row;
   gap: 40px;
   align-items: flex-start;
-  position: relative;
-  padding-top: 24px;
+  margin-top: 20px;
 }
 
 .child-column {
@@ -223,64 +222,18 @@ const handleUpdateText = (event) => {
   position: relative;
 }
 
-/* Línea vertical desde cada hijo hacia arriba */
-.child-column::before {
+/* Punto conector superior - para todos los nodos hijo */
+.child-column .node-box::before {
   content: '';
   position: absolute;
-  top: -24px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  width: 2px;
-  height: 24px;
-  background: #aaa;
-  z-index: 1;
-}
-
-/* Para múltiples hijos: línea horizontal */
-/* Primer hijo: línea desde su centro hacia la derecha */
-.children-container:not(.single-child) .child-column:first-child::after {
-  content: '';
-  position: absolute;
-  top: -24px;
-  left: 50%;
-  height: 2px;
-  background: #aaa;
-  /* La línea se extiende hacia la derecha hasta el próximo hijo */
-  /* Ancho del nodo/2 (225px) + gap (40px) + ancho siguiente nodo/2 (225px) = 490px */
-  width: 490px;
-}
-
-/* Último hijo: línea desde su centro hacia la izquierda */
-.children-container:not(.single-child) .child-column:last-child::after {
-  content: '';
-  position: absolute;
-  top: -24px;
-  right: 50%;
-  height: 2px;
-  background: #aaa;
-  /* Solo si hay más de 2 hijos, el último también necesita línea hacia la izquierda */
-  width: 490px;
-}
-
-/* Si solo hay 2 hijos, el último no necesita línea extra (ya está conectado por el primero) */
-.children-container:not(.single-child) .child-column:first-child:nth-last-child(2)::after {
-  /* Este es el primer hijo cuando solo hay 2 hijos en total */
-  width: 490px; /* Solo necesita llegar al segundo */
-}
-
-.children-container:not(.single-child) .child-column:last-child:nth-child(2)::after {
-  /* Este es el último hijo cuando solo hay 2 hijos en total */
-  content: none; /* No necesita línea porque el primero ya lo conecta */
-}
-
-/* Hijos del medio: línea que atraviesa de izquierda a derecha */
-.children-container:not(.single-child) .child-column:not(:first-child):not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: -24px;
-  left: -265px; /* Mitad del nodo (225px) + gap (40px) */
-  height: 2px;
-  background: #aaa;
-  width: 980px; /* Atraviesa completamente: 225 + 40 + 450 + 40 + 225 */
+  width: 10px;
+  height: 10px;
+  background: #888;
+  border-radius: 50%;
+  border: 2px solid white;
+  z-index: 2;
 }
 </style>
