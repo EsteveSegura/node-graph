@@ -63,7 +63,13 @@ body {
   flex: 1;
   padding: 40px 20px;
   overflow-x: auto;
-  display: flex;
-  justify-content: center;
+  overflow-y: auto;
+  min-width: 0; /* permite que el flex item se encoja */
+}
+
+/* Wrapper interno para centrar cuando el contenido es pequeño */
+.conversation-area > * {
+  min-width: min-content;
+  margin: 0 auto;
 }
 </style>
