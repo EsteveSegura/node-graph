@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import ConversationNode from './components/ConversationNode.vue'
+import InfiniteCanvas from './components/InfiniteCanvas.vue'
 import { useConversationStore } from './stores/conversation'
 
 const store = useConversationStore()
@@ -18,7 +19,9 @@ onMounted(() => {
     </header>
 
     <main class="conversation-area">
-      <ConversationNode v-if="store.getRootNode" :node-id="store.getRootNode.id" />
+      <InfiniteCanvas>
+        <ConversationNode v-if="store.getRootNode" :node-id="store.getRootNode.id" />
+      </InfiniteCanvas>
     </main>
   </div>
 </template>
@@ -36,9 +39,10 @@ body {
 }
 
 .app-container {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .app-header {
@@ -47,6 +51,7 @@ body {
   padding: 20px;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
 
 .app-header h1 {
@@ -61,15 +66,9 @@ body {
 
 .conversation-area {
   flex: 1;
-  padding: 40px 20px;
-  overflow-x: auto;
-  overflow-y: auto;
-  min-width: 0; /* permite que el flex item se encoja */
-}
-
-/* Wrapper interno para centrar cuando el contenido es pequeño */
-.conversation-area > * {
-  min-width: min-content;
-  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: #f5f5f5;
+  min-height: 0;
 }
 </style>
