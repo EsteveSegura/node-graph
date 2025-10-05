@@ -18,11 +18,13 @@ export function useNodeActions(nodeId) {
     }
   }
 
-  const handleAddLlmChild = () => {
+  const handleAddLlmChild = async () => {
     try {
-      store.addChild(nodeId, 'llm')
+      const llmNodeId = store.addChild(nodeId, 'llm')
+      // Generar respuesta automáticamente
+      await store.generateLLMResponse(llmNodeId)
     } catch (error) {
-      console.error('Error adding llm child:', error)
+      console.error('Error adding/generating llm child:', error)
     }
   }
 
@@ -30,11 +32,20 @@ export function useNodeActions(nodeId) {
     store.updateText(nodeId, event.target.value)
   }
 
+  const handleRegenerate = async () => {
+    try {
+      await store.generateLLMResponse(nodeId)
+    } catch (error) {
+      console.error('Error regenerating llm response:', error)
+    }
+  }
+
   return {
     node,
     canAddLlm,
     handleAddUserChild,
     handleAddLlmChild,
-    handleUpdateText
+    handleUpdateText,
+    handleRegenerate
   }
 }

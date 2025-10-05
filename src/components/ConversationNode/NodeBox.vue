@@ -1,5 +1,6 @@
 <script setup>
 import { useNodeLabels } from '../../composables/useNodeLabels'
+import { useConversationStore } from '../../stores/conversation'
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -13,9 +14,12 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['add-user-child', 'add-llm-child', 'update-text'])
+const emit = defineEmits(['add-user-child', 'add-llm-child', 'update-text', 'regenerate'])
 
+const store = useConversationStore()
 const { nodeTypeLabel } = useNodeLabels(computed(() => props.node))
+
+const isGenerating = computed(() => store.isGenerating(props.node.id))
 
 // Exponer el elemento raíz para que pueda ser accedido por el padre
 const nodeBoxEl = ref(null)
@@ -26,10 +30,13 @@ defineExpose({ nodeBoxEl })
   <div
     ref="nodeBoxEl"
     class="node-box"
-    :class="[`node-${node.type}`, { 'has-children': node.children.length > 0 }]"
+    :class="[`node-${node.type}`, { 'has-children': node.children.length > 0, 'is-generating': isGenerating }]"
   >
     <div class="node-header">
-      <span class="node-type">{{ nodeTypeLabel }}</span>
+      <span class="node-type">
+        {{ nodeTypeLabel }}
+        <span v-if="isGenerating" class="generating-indicator">⏳ Generando...</span>
+      </span>
       <span class="node-id">{{ node.id }}</span>
     </div>
 
@@ -37,6 +44,7 @@ defineExpose({ nodeBoxEl })
       class="node-content"
       :value="node.text"
       @input="emit('update-text', $event)"
+      :disabled="isGenerating"
       rows="4"
       placeholder="Escribe aquí..."
     />
@@ -45,6 +53,7 @@ defineExpose({ nodeBoxEl })
       <button
         v-if="node.type === 'system' || node.type === 'llm'"
         @click="emit('add-user-child')"
+        :disabled="isGenerating"
         class="btn-action"
       >
         ➕ Branch: User Prompt
@@ -53,11 +62,19 @@ defineExpose({ nodeBoxEl })
       <button
         v-if="node.type === 'user'"
         @click="emit('add-llm-child')"
-        :disabled="!canAddLlm"
+        :disabled="!canAddLlm || isGenerating"
         class="btn-action"
-        :class="{ disabled: !canAddLlm }"
+        :class="{ disabled: !canAddLlm || isGenerating }"
       >
         ↳ Generar LLM Response
+      </button>
+
+      <button
+        v-if="node.type === 'llm' && !isGenerating"
+        @click="emit('regenerate')"
+        class="btn-action btn-regenerate"
+      >
+        🔄 Regenerar
       </button>
     </div>
   </div>
@@ -169,6 +186,40 @@ defineExpose({ nodeBoxEl })
 
 .btn-action.disabled {
   opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-regenerate {
+  background: #fff9e6;
+  border-color: #ffaa00;
+}
+
+.btn-regenerate:hover {
+  background: #fff3cc;
+  border-color: #ff8800;
+}
+
+/* Indicador de generación */
+.generating-indicator {
+  font-size: 11px;
+  color: #ff8800;
+  font-weight: normal;
+  margin-left: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.node-box.is-generating {
+  border-color: #ffaa00 !important;
+  box-shadow: 0 0 0 2px rgba(255, 170, 0, 0.2);
+}
+
+.node-box.is-generating .node-content {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 </style>
