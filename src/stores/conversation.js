@@ -84,6 +84,45 @@ export const useConversationStore = defineStore('conversation', {
     },
 
     /**
+     * Elimina un nodo y todos sus descendientes recursivamente
+     */
+    deleteNode(nodeId) {
+      const node = this.nodesById[nodeId]
+      if (!node) {
+        throw new Error(`Node ${nodeId} not found`)
+      }
+
+      // No permitir borrar el nodo root
+      if (node.type === 'system' && node.parentId === null) {
+        throw new Error('No se puede borrar el nodo raíz del sistema')
+      }
+
+      // Recursivamente eliminar todos los hijos
+      const childrenIds = [...node.children]
+      for (const childId of childrenIds) {
+        this.deleteNode(childId)
+      }
+
+      // Eliminar referencia del padre
+      if (node.parentId) {
+        const parent = this.nodesById[node.parentId]
+        if (parent) {
+          parent.children = parent.children.filter(id => id !== nodeId)
+        }
+      }
+
+      // Eliminar de las estructuras
+      const index = this.nodes.findIndex(n => n.id === nodeId)
+      if (index !== -1) {
+        this.nodes.splice(index, 1)
+      }
+      delete this.nodesById[nodeId]
+
+      // Eliminar del set de generando si estaba ahí
+      this.generatingNodes.delete(nodeId)
+    },
+
+    /**
      * Construye el array de mensajes desde la raíz hasta el nodo especificado
      * para enviar a la API de OpenAI
      */

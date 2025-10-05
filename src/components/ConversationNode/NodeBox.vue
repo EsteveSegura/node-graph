@@ -14,7 +14,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['add-user-child', 'add-llm-child', 'update-text', 'regenerate'])
+const emit = defineEmits(['add-user-child', 'add-llm-child', 'update-text', 'regenerate', 'delete'])
 
 const store = useConversationStore()
 const { nodeTypeLabel } = useNodeLabels(computed(() => props.node))
@@ -25,6 +25,7 @@ const shouldBeReadonly = computed(() =>
   hasChildren.value || props.node.type === 'llm'
 )
 const isEditing = ref(false)
+const isRootNode = computed(() => props.node.type === 'system' && !props.node.parentId)
 
 const startEditing = () => {
   isEditing.value = true
@@ -53,13 +54,23 @@ defineExpose({ nodeBoxEl })
         <span v-if="isGenerating" class="generating-indicator">⏳ Generando...</span>
       </span>
       <span class="node-id">{{ node.id }}</span>
-      <button
-        v-if="shouldBeReadonly && !isEditing"
-        @click="startEditing"
-        class="btn-edit"
-      >
-        ✏️ Editar
-      </button>
+      <div class="header-actions">
+        <button
+          v-if="shouldBeReadonly && !isEditing"
+          @click="startEditing"
+          class="btn-edit"
+        >
+          ✏️ Editar
+        </button>
+        <button
+          v-if="!isRootNode"
+          @click="emit('delete')"
+          class="btn-delete"
+          :disabled="isGenerating"
+        >
+          🗑️
+        </button>
+      </div>
     </div>
 
     <textarea
@@ -174,7 +185,14 @@ defineExpose({ nodeBoxEl })
   font-weight: normal;
 }
 
-.btn-edit {
+.header-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.btn-edit,
+.btn-delete {
   padding: 4px 10px;
   border: 1px solid #505050;
   border-radius: 4px;
@@ -185,9 +203,24 @@ defineExpose({ nodeBoxEl })
   transition: all 0.2s;
 }
 
-.btn-edit:hover {
+.btn-edit:hover,
+.btn-delete:hover:not(:disabled) {
   background: #454545;
   border-color: #606060;
+}
+
+.btn-delete {
+  padding: 4px 8px;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: #4d2020;
+  border-color: #ff6b6b;
+}
+
+.btn-delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .node-content {

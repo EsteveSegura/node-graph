@@ -40,12 +40,22 @@ export function useNodeActions(nodeId) {
     }
   }
 
+  const handleDelete = () => {
+    try {
+      store.deleteNode(nodeId)
+    } catch (error) {
+      console.error('Error deleting node:', error)
+      alert(error.message)
+    }
+  }
+
   return {
     node,
     canAddLlm,
     handleAddUserChild,
     handleAddLlmChild,
     handleUpdateText,
-    handleRegenerate
+    handleRegenerate,
+    handleDelete
   }
 }

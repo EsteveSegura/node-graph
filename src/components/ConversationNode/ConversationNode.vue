@@ -23,7 +23,8 @@ const {
   handleAddUserChild,
   handleAddLlmChild,
   handleUpdateText,
-  handleRegenerate
+  handleRegenerate,
+  handleDelete
 } = useNodeActions(props.nodeId)
 
 // Computed para obtener el elemento real de NodeBox
@@ -53,6 +54,7 @@ const {
       @add-llm-child="handleAddLlmChild"
       @update-text="handleUpdateText"
       @regenerate="handleRegenerate"
+      @delete="handleDelete"
     />
 
     <!-- Hijos (horizontal) -->
