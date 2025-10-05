@@ -104,6 +104,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   cursor: grab;
   position: relative;
+  background: #1a1a1a;
 }
 
 .infinite-canvas.is-dragging {

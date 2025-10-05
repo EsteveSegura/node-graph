@@ -35,7 +35,7 @@ onMounted(() => {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #f5f5f5;
+  background: #1a1a1a;
 }
 
 .app-container {
@@ -46,12 +46,13 @@ body {
 }
 
 .app-header {
-  background: #2c3e50;
-  color: white;
+  background: #2d2d2d;
+  color: #e0e0e0;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   flex-shrink: 0;
+  border-bottom: 1px solid #404040;
 }
 
 .app-header h1 {
@@ -61,14 +62,14 @@ body {
 
 .subtitle {
   font-size: 14px;
-  opacity: 0.8;
+  color: #a0a0a0;
 }
 
 .conversation-area {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #f5f5f5;
+  background: #1a1a1a;
   min-height: 0;
 }
 </style>

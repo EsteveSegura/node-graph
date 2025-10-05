@@ -101,9 +101,9 @@ const {
   transform: translateX(-50%);
   width: 10px;
   height: 10px;
-  background: #888;
+  background: #606060;
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid #1a1a1a;
   z-index: 3;
 }
 </style>

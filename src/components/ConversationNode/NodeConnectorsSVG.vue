@@ -65,7 +65,7 @@ defineProps({
 }
 
 .edge-line {
-  stroke: #B0B0B0;
+  stroke: #606060;
   stroke-width: 2;
   stroke-linecap: round;
   shape-rendering: geometricPrecision;

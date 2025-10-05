@@ -114,11 +114,11 @@ defineExpose({ nodeBoxEl })
 <style scoped>
 .node-box {
   width: 450px;
-  border: 2px solid #ccc;
+  border: 2px solid #404040;
   border-radius: 8px;
   padding: 16px;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: #2d2d2d;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   position: relative;
   z-index: 2;
 }
@@ -132,25 +132,25 @@ defineExpose({ nodeBoxEl })
   transform: translateX(-50%);
   width: 10px;
   height: 10px;
-  background: #888;
+  background: #606060;
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid #1a1a1a;
   z-index: 3;
 }
 
 .node-system {
   border-color: #4a90e2;
-  background: #f0f7ff;
+  background: #1a2942;
 }
 
 .node-user {
   border-color: #50c878;
-  background: #f0fff4;
+  background: #1a3325;
 }
 
 .node-llm {
   border-color: #ff6b6b;
-  background: #fff5f5;
+  background: #3d1f1f;
 }
 
 .node-header {
@@ -164,59 +164,62 @@ defineExpose({ nodeBoxEl })
 }
 
 .node-type {
-  color: #333;
+  color: #e0e0e0;
   flex: 1;
 }
 
 .node-id {
-  color: #888;
+  color: #808080;
   font-size: 12px;
   font-weight: normal;
 }
 
 .btn-edit {
   padding: 4px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #505050;
   border-radius: 4px;
-  background: white;
+  background: #3a3a3a;
+  color: #e0e0e0;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s;
 }
 
 .btn-edit:hover {
-  background: #f0f0f0;
-  border-color: #999;
+  background: #454545;
+  border-color: #606060;
 }
 
 .node-content {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid #404040;
   border-radius: 4px;
   font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
   min-height: 80px;
+  background: #1f1f1f;
+  color: #e0e0e0;
 }
 
 .node-content:focus {
   outline: none;
   border-color: #4a90e2;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
 
 .node-content-readonly {
   width: 100%;
   padding: 10px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #353535;
   border-radius: 4px;
   font-size: 14px;
   line-height: 1.5;
   min-height: 80px;
-  background: #fafafa;
-  color: #333;
+  background: #252525;
+  color: #a0a0a0;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -229,9 +232,10 @@ defineExpose({ nodeBoxEl })
 
 .btn-action {
   padding: 8px 14px;
-  border: 1px solid #ccc;
+  border: 1px solid #505050;
   border-radius: 6px;
-  background: white;
+  background: #3a3a3a;
+  color: #e0e0e0;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -240,10 +244,10 @@ defineExpose({ nodeBoxEl })
 }
 
 .btn-action:hover:not(.disabled) {
-  background: #f8f8f8;
-  border-color: #999;
+  background: #454545;
+  border-color: #606060;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .btn-action.disabled {
@@ -252,13 +256,14 @@ defineExpose({ nodeBoxEl })
 }
 
 .btn-regenerate {
-  background: #fff9e6;
+  background: #3d3100;
   border-color: #ffaa00;
+  color: #ffaa00;
 }
 
 .btn-regenerate:hover {
-  background: #fff3cc;
-  border-color: #ff8800;
+  background: #4d3d00;
+  border-color: #ffbb33;
 }
 
 /* Indicador de generación */
