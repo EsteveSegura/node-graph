@@ -1,10 +1,10 @@
 import { ref, reactive, onMounted, onBeforeUnmount, onUpdated, nextTick, watch } from 'vue'
 
 /**
- * Composable para gestionar las líneas conectoras SVG entre nodos padre e hijos
- * @param {Ref} node - Nodo reactivo
- * @param {Ref} containerRef - Ref al elemento contenedor
- * @param {Ref} parentBoxRef - Ref al elemento node-box del padre
+ * Composable to manage SVG connector lines between parent and child nodes
+ * @param {Ref} node - Reactive node
+ * @param {Ref} containerRef - Ref to container element
+ * @param {Ref} parentBoxRef - Ref to parent's node-box element
  */
 export function useNodeConnectors(node, containerRef, parentBoxRef) {
 
@@ -12,14 +12,14 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
   const edges = reactive({
     trunk: null,          // {x1,y1,x2,y2}
     bar: null,            // {x1,y1,x2,y2}
-    branches: []          // array de {x1,y1,x2,y2}
+    branches: []          // array of {x1,y1,x2,y2}
   })
 
   let resizeObs = null
   let rafId = 0
 
-  const CONNECTOR_OFFSET_UP = 6    // pequeñísimo margen para no pisar el punto del hijo
-  const CONNECTOR_OFFSET_DOWN = 6  // margen para no pisar el punto del padre
+  const CONNECTOR_OFFSET_UP = 6    // tiny margin to not overlap child's dot
+  const CONNECTOR_OFFSET_DOWN = 6  // margin to not overlap parent's dot
 
   function scheduleCompute() {
     cancelAnimationFrame(rafId)
@@ -39,7 +39,7 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
         return
       }
 
-      // Medidas del contenedor para el viewBox/coords relativas
+      // Container measurements for viewBox/relative coords
       svgSize.width = containerEl.offsetWidth
       svgSize.height = containerEl.offsetHeight
 
@@ -48,7 +48,7 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
       const parentCenterX = parentRect.left - containerRect.left + parentRect.width / 2
       const parentBottomY = parentRect.bottom - containerRect.top
 
-      // OJO: los hijos directos son componentes con clase "child-column" en su raíz.
+      // NOTE: direct children are components with "child-column" class at their root
       const childContainers = containerEl.querySelectorAll(':scope > .children-container > .child-column')
       const childBoxes = Array.from(childContainers)
         .map(c => c.querySelector('.node-box'))
@@ -67,10 +67,10 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
       })
       const childTopYs = childBoxes.map(b => b.getBoundingClientRect().top - containerRect.top)
 
-      // Altura de la barra: un poco por encima del tope del/los hijos
+      // Bar height: slightly above the top of the child(ren)
       const barY = Math.min(...childTopYs) - CONNECTOR_OFFSET_UP
 
-      // El tronco baja desde el centro del padre hasta la barra
+      // Trunk goes down from parent center to the bar
       edges.trunk = {
         x1: parentCenterX,
         y1: parentBottomY + CONNECTOR_OFFSET_DOWN,
@@ -78,8 +78,8 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
         y2: barY
       }
 
-      // La barra debe cubrir desde el punto más a la izquierda hasta el más a la derecha
-      // incluyendo también la x del padre para garantizar la conexión.
+      // Bar must cover from leftmost to rightmost point
+      // also including parent's x to guarantee connection
       const minX = Math.min(parentCenterX, ...childCentersX)
       const maxX = Math.max(parentCenterX, ...childCentersX)
 
@@ -90,7 +90,7 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
         y2: barY
       }
 
-      // Ramitas verticales desde la barra hasta el top de cada hijo
+      // Vertical branches from bar to top of each child
       edges.branches = childCentersX.map((x, i) => ({
         x1: x,
         y1: barY,
@@ -107,14 +107,14 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
     resizeObs = new ResizeObserver(() => scheduleCompute())
     resizeObs.observe(containerRef.value)
 
-    // También observamos el propio box del padre (cambios por textarea)
+    // Also observe parent's box (changes from textarea)
     if (parentBoxRef.value) resizeObs.observe(parentBoxRef.value)
 
-    // 🔑 Observar los hijos directos (sus cajas) para detectar cambios de alto/ancho
+    // 🔑 Observe direct children (their boxes) to detect height/width changes
     const childBoxes = containerRef.value.querySelectorAll(':scope > .children-container .node-box')
     childBoxes.forEach(el => resizeObs.observe(el))
 
-    // También observar el contenedor de hijos por cambios de layout
+    // Also observe children container for layout changes
     const childrenContainer = containerRef.value.querySelector(':scope > .children-container')
     if (childrenContainer) resizeObs.observe(childrenContainer)
   }

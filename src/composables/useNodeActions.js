@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { useConversationStore } from '../stores/conversation'
 
 /**
- * Composable para gestionar las acciones de un nodo (añadir hijos, actualizar texto)
+ * Composable to manage node actions (add children, update text)
  */
 export function useNodeActions(nodeId) {
   const store = useConversationStore()

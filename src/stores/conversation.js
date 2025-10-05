@@ -6,7 +6,7 @@ export const useConversationStore = defineStore('conversation', {
     nodes: [],
     nodesById: {},
     seq: 0,
-    generatingNodes: new Set() // IDs de nodos que están generando respuesta
+    generatingNodes: new Set() // Node IDs currently generating responses
   }),
 
   getters: {
@@ -26,13 +26,13 @@ export const useConversationStore = defineStore('conversation', {
 
   actions: {
     initialize() {
-      // Crear nodo root system
+      // Create root system node
       const systemNode = {
         id: `n${this.seq++}`,
         type: 'system',
         parentId: null,
         children: [],
-        text: 'Instrucciones del sistema:'
+        text: 'System instructions:'
       }
       this.nodes.push(systemNode)
       this.nodesById[systemNode.id] = systemNode
@@ -44,7 +44,7 @@ export const useConversationStore = defineStore('conversation', {
         throw new Error(`Parent node ${parentId} not found`)
       }
 
-      // Validar reglas de tipado
+      // Validate typing rules
       if (parent.type === 'system' || parent.type === 'llm') {
         if (childType !== 'user') {
           throw new Error(`Node type ${parent.type} can only have user children`)
@@ -58,16 +58,16 @@ export const useConversationStore = defineStore('conversation', {
         }
       }
 
-      // Crear nuevo nodo
+      // Create new node
       const newNode = {
         id: `n${this.seq++}`,
         type: childType,
         parentId: parentId,
         children: [],
-        text: childType === 'user' ? 'Nuevo prompt...' : 'Respuesta del LLM...'
+        text: childType === 'user' ? 'New prompt...' : 'LLM response...'
       }
 
-      // Agregar a estructuras
+      // Add to structures
       this.nodes.push(newNode)
       this.nodesById[newNode.id] = newNode
       parent.children.push(newNode.id)
@@ -84,7 +84,7 @@ export const useConversationStore = defineStore('conversation', {
     },
 
     /**
-     * Elimina un nodo y todos sus descendientes recursivamente
+     * Deletes a node and all its descendants recursively
      */
     deleteNode(nodeId) {
       const node = this.nodesById[nodeId]
@@ -92,18 +92,18 @@ export const useConversationStore = defineStore('conversation', {
         throw new Error(`Node ${nodeId} not found`)
       }
 
-      // No permitir borrar el nodo root
+      // Don't allow deleting the root node
       if (node.type === 'system' && node.parentId === null) {
-        throw new Error('No se puede borrar el nodo raíz del sistema')
+        throw new Error('Cannot delete the system root node')
       }
 
-      // Recursivamente eliminar todos los hijos
+      // Recursively delete all children
       const childrenIds = [...node.children]
       for (const childId of childrenIds) {
         this.deleteNode(childId)
       }
 
-      // Eliminar referencia del padre
+      // Remove reference from parent
       if (node.parentId) {
         const parent = this.nodesById[node.parentId]
         if (parent) {
@@ -111,26 +111,26 @@ export const useConversationStore = defineStore('conversation', {
         }
       }
 
-      // Eliminar de las estructuras
+      // Remove from data structures
       const index = this.nodes.findIndex(n => n.id === nodeId)
       if (index !== -1) {
         this.nodes.splice(index, 1)
       }
       delete this.nodesById[nodeId]
 
-      // Eliminar del set de generando si estaba ahí
+      // Remove from generating set if present
       this.generatingNodes.delete(nodeId)
     },
 
     /**
-     * Construye el array de mensajes desde la raíz hasta el nodo especificado
-     * para enviar a la API de OpenAI
+     * Builds the message array from root to the specified node
+     * to send to OpenAI API
      */
     buildMessagesFromTree(targetNodeId) {
       const messages = []
       const path = []
 
-      // Encontrar el path desde la raíz hasta el nodo target
+      // Find path from root to target node
       const findPath = (nodeId) => {
         const node = this.nodesById[nodeId]
         if (!node) return false
@@ -152,12 +152,12 @@ export const useConversationStore = defineStore('conversation', {
         findPath(root.id)
       }
 
-      // Convertir el path a mensajes en formato OpenAI
+      // Convert path to OpenAI message format
       for (const node of path) {
         if (node.type === 'system') {
           messages.push({
             role: 'system',
-            content: node.text || 'Eres un asistente útil.'
+            content: node.text || 'You are a helpful assistant.'
           })
         } else if (node.type === 'user') {
           messages.push({
@@ -165,7 +165,7 @@ export const useConversationStore = defineStore('conversation', {
             content: node.text
           })
         } else if (node.type === 'llm' && node.id !== targetNodeId) {
-          // Solo incluir respuestas LLM anteriores, no el nodo que estamos generando
+          // Only include previous LLM responses, not the node we're generating
           messages.push({
             role: 'assistant',
             content: node.text
@@ -177,27 +177,27 @@ export const useConversationStore = defineStore('conversation', {
     },
 
     /**
-     * Genera una respuesta LLM para el nodo especificado
+     * Generates an LLM response for the specified node
      */
     async generateLLMResponse(nodeId) {
       const node = this.nodesById[nodeId]
       if (!node || node.type !== 'llm') {
-        throw new Error('Solo se puede generar respuesta para nodos LLM')
+        throw new Error('Can only generate response for LLM nodes')
       }
 
-      // Marcar como generando
+      // Mark as generating
       this.generatingNodes.add(nodeId)
 
       try {
         const { generateCompletion } = useOpenAI()
 
-        // Construir contexto de mensajes
+        // Build message context
         const messages = this.buildMessagesFromTree(nodeId)
 
-        // Llamar a OpenAI
+        // Call OpenAI
         const response = await generateCompletion(messages)
 
-        // Actualizar el texto del nodo
+        // Update node text
         this.updateText(nodeId, response)
 
       } catch (error) {
@@ -205,7 +205,7 @@ export const useConversationStore = defineStore('conversation', {
         this.updateText(nodeId, `❌ Error: ${error.message}`)
         throw error
       } finally {
-        // Quitar del set de generando
+        // Remove from generating set
         this.generatingNodes.delete(nodeId)
       }
     }

@@ -20,7 +20,7 @@ const temperature = ref('')
 const maxTokens = ref('')
 
 onMounted(() => {
-  // Cargar valores actuales (desde localStorage o env vars)
+  // Load current values (from localStorage or env vars)
   apiKey.value = localStorage.getItem('VITE_OPENAI_API_KEY') || import.meta.env.VITE_OPENAI_API_KEY || ''
   model.value = localStorage.getItem('VITE_OPENAI_MODEL') || import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini'
   temperature.value = localStorage.getItem('VITE_OPENAI_TEMPERATURE') || import.meta.env.VITE_OPENAI_TEMPERATURE || '0.7'
@@ -28,13 +28,13 @@ onMounted(() => {
 })
 
 const handleSave = () => {
-  // Guardar en localStorage
+  // Save to localStorage
   if (apiKey.value) localStorage.setItem('VITE_OPENAI_API_KEY', apiKey.value)
   if (model.value) localStorage.setItem('VITE_OPENAI_MODEL', model.value)
   if (temperature.value) localStorage.setItem('VITE_OPENAI_TEMPERATURE', temperature.value)
   if (maxTokens.value) localStorage.setItem('VITE_OPENAI_MAX_TOKENS', maxTokens.value)
 
-  // Cerrar modal
+  // Close modal
   emit('close')
 }
 

@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
 /**
- * Composable para gestionar labels y formateo de visualización de nodos
+ * Composable to manage labels and display formatting for nodes
  */
 export function useNodeLabels(node) {
   const nodeTypeLabel = computed(() => {

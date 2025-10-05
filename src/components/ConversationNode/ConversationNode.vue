@@ -12,7 +12,7 @@ const props = defineProps({
   }
 })
 
-// Refs locales para elementos DOM
+// Local refs for DOM elements
 const containerRef = ref(null)
 const parentBoxRef = ref(null)
 
@@ -27,7 +27,7 @@ const {
   handleDelete
 } = useNodeActions(props.nodeId)
 
-// Computed para obtener el elemento real de NodeBox
+// Computed to get actual NodeBox element
 const parentBoxElement = computed(() => parentBoxRef.value?.nodeBoxEl)
 
 const {
@@ -38,14 +38,14 @@ const {
 
 <template>
   <div v-if="node" class="node-container child-column" ref="containerRef">
-    <!-- Capa SVG para las líneas -->
+    <!-- SVG layer for lines -->
     <NodeConnectorsSVG
       :edges="edges"
       :svgSize="svgSize"
       :hasChildren="node.children.length > 0"
     />
 
-    <!-- Caja del nodo -->
+    <!-- Node box -->
     <NodeBox
       ref="parentBoxRef"
       :node="node"
@@ -57,7 +57,7 @@ const {
       @delete="handleDelete"
     />
 
-    <!-- Hijos (horizontal) -->
+    <!-- Children (horizontal) -->
     <div v-if="node.children.length > 0" class="children-container">
       <ConversationNode
         v-for="childId in node.children"
@@ -70,9 +70,9 @@ const {
 </template>
 
 <style scoped>
-/* --- Layout del nodo --- */
+/* --- Node layout --- */
 .node-container {
-  position: relative; /* necesario para posicionar el SVG encima */
+  position: relative; /* needed to position SVG on top */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,7 +94,7 @@ const {
   z-index: 2;
 }
 
-/* Punto conector superior - para todos los nodos hijo */
+/* Top connector dot - for all child nodes */
 .child-column :deep(.node-box)::before {
   content: '';
   position: absolute;

@@ -1,15 +1,15 @@
 import { ref } from 'vue'
 
 /**
- * Composable para interactuar con la API de OpenAI
- * ⚠️ ADVERTENCIA: Esto expone tu API key en el cliente. Solo para desarrollo/testing.
+ * Composable to interact with OpenAI API
+ * ⚠️ WARNING: This exposes your API key in the client. Only for development/testing.
  */
 export function useOpenAI() {
   const isGenerating = ref(false)
   const error = ref(null)
 
   /**
-   * Obtiene la configuración actual (lee dinámicamente para permitir cambios en tiempo real)
+   * Gets current configuration (reads dynamically to allow real-time changes)
    */
   const getConfig = () => ({
     apiKey: localStorage.getItem('VITE_OPENAI_API_KEY') || import.meta.env.VITE_OPENAI_API_KEY,
@@ -19,22 +19,22 @@ export function useOpenAI() {
   })
 
   /**
-   * Genera una respuesta usando la API de OpenAI
-   * @param {Array} messages - Array de mensajes en formato OpenAI [{role, content}]
-   * @returns {Promise<string>} - Contenido de la respuesta
+   * Generates a response using OpenAI API
+   * @param {Array} messages - Array of messages in OpenAI format [{role, content}]
+   * @returns {Promise<string>} - Response content
    */
   const generateCompletion = async (messages) => {
     const { apiKey, model, temperature, maxTokens } = getConfig()
 
     if (!apiKey || apiKey === 'sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx') {
-      throw new Error('API Key de OpenAI no configurada. Crea un archivo .env.local con VITE_OPENAI_API_KEY')
+      throw new Error('OpenAI API Key not configured. Create a .env.local file with VITE_OPENAI_API_KEY')
     }
 
     isGenerating.value = true
     error.value = null
 
     try {
-      // Los modelos GPT-5 tienen restricciones especiales
+      // GPT-5 models have special restrictions
       const isGpt5Model = model.startsWith('gpt-5')
       const requestBody = {
         model: model,
@@ -42,13 +42,13 @@ export function useOpenAI() {
         stream: false
       }
 
-      // GPT-5 solo soporta temperature = 1 (valor por defecto), así que lo omitimos
-      // Otros modelos pueden usar temperature personalizada
+      // GPT-5 only supports temperature = 1 (default value), so we omit it
+      // Other models can use custom temperature
       if (!isGpt5Model) {
         requestBody.temperature = temperature
       }
 
-      // GPT-5 usa 'max_completion_tokens', otros modelos usan 'max_tokens'
+      // GPT-5 uses 'max_completion_tokens', other models use 'max_tokens'
       if (isGpt5Model) {
         requestBody.max_completion_tokens = maxTokens
       } else {
@@ -72,7 +72,7 @@ export function useOpenAI() {
       const data = await response.json()
 
       if (!data.choices || data.choices.length === 0) {
-        throw new Error('No se recibió respuesta del modelo')
+        throw new Error('No response received from the model')
       }
 
       const assistantMessage = data.choices[0].message.content

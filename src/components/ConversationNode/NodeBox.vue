@@ -51,7 +51,7 @@ defineExpose({ nodeBoxEl })
     <div class="node-header">
       <span class="node-type">
         {{ nodeTypeLabel }}
-        <span v-if="isGenerating" class="generating-indicator">⏳ Generando...</span>
+        <span v-if="isGenerating" class="generating-indicator">⏳ Generating...</span>
       </span>
       <span class="node-id">{{ node.id }}</span>
       <div class="header-actions">
@@ -60,7 +60,7 @@ defineExpose({ nodeBoxEl })
           @click="startEditing"
           class="btn-edit"
         >
-          ✏️ Editar
+          ✏️ Edit
         </button>
         <button
           v-if="!isRootNode"
@@ -81,14 +81,14 @@ defineExpose({ nodeBoxEl })
       @blur="stopEditing"
       :disabled="isGenerating"
       rows="4"
-      placeholder="Escribe aquí..."
+      placeholder="Write here..."
     />
 
     <div
       v-else
       class="node-content-readonly"
     >
-      {{ node.text || 'Sin contenido...' }}
+      {{ node.text || 'No content...' }}
     </div>
 
     <div class="node-actions">
@@ -108,7 +108,7 @@ defineExpose({ nodeBoxEl })
         class="btn-action"
         :class="{ disabled: !canAddLlm || isGenerating }"
       >
-        ↳ Generar LLM Response
+        ↳ Generate LLM Response
       </button>
 
       <button
@@ -116,7 +116,7 @@ defineExpose({ nodeBoxEl })
         @click="emit('regenerate')"
         class="btn-action btn-regenerate"
       >
-        🔄 Regenerar
+        🔄 Regenerate
       </button>
     </div>
   </div>
@@ -134,7 +134,7 @@ defineExpose({ nodeBoxEl })
   z-index: 2;
 }
 
-/* Punto conector inferior - para nodos con hijos */
+/* Bottom connector dot - for nodes with children */
 .node-box.has-children::after {
   content: '';
   position: absolute;
@@ -299,7 +299,7 @@ defineExpose({ nodeBoxEl })
   border-color: #ffbb33;
 }
 
-/* Indicador de generación */
+/* Generation indicator */
 .generating-indicator {
   font-size: 11px;
   color: #ff8800;
