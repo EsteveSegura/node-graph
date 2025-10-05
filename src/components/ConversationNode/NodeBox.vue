@@ -20,6 +20,21 @@ const store = useConversationStore()
 const { nodeTypeLabel } = useNodeLabels(computed(() => props.node))
 
 const isGenerating = computed(() => store.isGenerating(props.node.id))
+const hasChildren = computed(() => props.node.children.length > 0)
+const shouldBeReadonly = computed(() =>
+  hasChildren.value || props.node.type === 'llm'
+)
+const isEditing = ref(false)
+
+const startEditing = () => {
+  isEditing.value = true
+}
+
+const stopEditing = () => {
+  if (shouldBeReadonly.value) {
+    isEditing.value = false
+  }
+}
 
 // Exponer el elemento raíz para que pueda ser accedido por el padre
 const nodeBoxEl = ref(null)
@@ -38,16 +53,32 @@ defineExpose({ nodeBoxEl })
         <span v-if="isGenerating" class="generating-indicator">⏳ Generando...</span>
       </span>
       <span class="node-id">{{ node.id }}</span>
+      <button
+        v-if="shouldBeReadonly && !isEditing"
+        @click="startEditing"
+        class="btn-edit"
+      >
+        ✏️ Editar
+      </button>
     </div>
 
     <textarea
+      v-if="!shouldBeReadonly || isEditing"
       class="node-content"
       :value="node.text"
       @input="emit('update-text', $event)"
+      @blur="stopEditing"
       :disabled="isGenerating"
       rows="4"
       placeholder="Escribe aquí..."
     />
+
+    <div
+      v-else
+      class="node-content-readonly"
+    >
+      {{ node.text || 'Sin contenido...' }}
+    </div>
 
     <div class="node-actions">
       <button
@@ -129,16 +160,33 @@ defineExpose({ nodeBoxEl })
   margin-bottom: 12px;
   font-weight: bold;
   font-size: 14px;
+  gap: 8px;
 }
 
 .node-type {
   color: #333;
+  flex: 1;
 }
 
 .node-id {
   color: #888;
   font-size: 12px;
   font-weight: normal;
+}
+
+.btn-edit {
+  padding: 4px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover {
+  background: #f0f0f0;
+  border-color: #999;
 }
 
 .node-content {
@@ -157,6 +205,20 @@ defineExpose({ nodeBoxEl })
   outline: none;
   border-color: #4a90e2;
   box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+.node-content-readonly {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 80px;
+  background: #fafafa;
+  color: #333;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .node-actions {
