@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted } from 'vue'
-import ConversationNode from './components/ConversationNode.vue'
+import ConversationNode from './components/ConversationNode'
 import InfiniteCanvas from './components/InfiniteCanvas.vue'
 import { useConversationStore } from './stores/conversation'
 
