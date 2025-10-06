@@ -4,12 +4,26 @@ import ConversationNode from '../components/ConversationNode'
 import InfiniteCanvas from '../components/InfiniteCanvas.vue'
 import SettingsModal from '../components/SettingsModal.vue'
 import { useConversationStore } from '../stores/conversation'
+import { useConversationId } from '../composables/useConversationId'
 
 const store = useConversationStore()
 const showSettings = ref(false)
+const { ensureConversationId } = useConversationId()
 
 onMounted(() => {
-  store.initialize()
+  // Get or generate conversation UUID
+  const uuid = ensureConversationId()
+
+  // Try to load existing conversation from localStorage
+  const loaded = store.loadFromLocalStorage(uuid)
+
+  // If no saved conversation exists, initialize a new one
+  if (!loaded) {
+    store.initialize()
+  }
+
+  // Set the conversation ID for autosave
+  store.setConversationId(uuid)
 })
 
 const openSettings = () => {

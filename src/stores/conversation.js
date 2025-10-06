@@ -6,7 +6,8 @@ export const useConversationStore = defineStore('conversation', {
     nodes: [],
     nodesById: {},
     seq: 0,
-    generatingNodes: new Set() // Node IDs currently generating responses
+    generatingNodes: new Set(), // Node IDs currently generating responses
+    conversationId: null // Current conversation UUID for autosave
   }),
 
   getters: {
@@ -72,6 +73,9 @@ export const useConversationStore = defineStore('conversation', {
       this.nodesById[newNode.id] = newNode
       parent.children.push(newNode.id)
 
+      // Autosave after creating node
+      this.autosave()
+
       return newNode.id
     },
 
@@ -81,6 +85,9 @@ export const useConversationStore = defineStore('conversation', {
         throw new Error(`Node ${nodeId} not found`)
       }
       node.text = newText
+
+      // Autosave after text update
+      this.autosave()
     },
 
     /**
@@ -120,6 +127,9 @@ export const useConversationStore = defineStore('conversation', {
 
       // Remove from generating set if present
       this.generatingNodes.delete(nodeId)
+
+      // Autosave after deleting node
+      this.autosave()
     },
 
     /**
@@ -200,6 +210,9 @@ export const useConversationStore = defineStore('conversation', {
         // Update node text
         this.updateText(nodeId, response)
 
+        // Autosave after successful generation
+        // (note: updateText already calls autosave, but we ensure it here too)
+
       } catch (error) {
         console.error('Error generating LLM response:', error)
         this.updateText(nodeId, `❌ Error: ${error.message}`)
@@ -207,6 +220,96 @@ export const useConversationStore = defineStore('conversation', {
       } finally {
         // Remove from generating set
         this.generatingNodes.delete(nodeId)
+      }
+    },
+
+    /**
+     * Set the current conversation ID for autosave
+     */
+    setConversationId(uuid) {
+      this.conversationId = uuid
+    },
+
+    /**
+     * Serialize the current state to JSON-compatible object
+     */
+    serializeState() {
+      return {
+        nodes: this.nodes,
+        nodesById: this.nodesById,
+        seq: this.seq,
+        version: 1,
+        timestamp: new Date().toISOString()
+      }
+    },
+
+    /**
+     * Deserialize and restore state from a saved object
+     */
+    deserializeState(data) {
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid conversation data')
+      }
+
+      // Restore state
+      this.nodes = data.nodes || []
+      this.nodesById = data.nodesById || {}
+      this.seq = data.seq || 0
+
+      // Clear transient state
+      this.generatingNodes.clear()
+    },
+
+    /**
+     * Save current state to localStorage
+     */
+    saveToLocalStorage(uuid) {
+      if (!uuid) {
+        console.warn('Cannot save: no conversation ID provided')
+        return
+      }
+
+      try {
+        const data = this.serializeState()
+        const key = `conversation_${uuid}`
+        localStorage.setItem(key, JSON.stringify(data))
+      } catch (error) {
+        console.error('Error saving conversation to localStorage:', error)
+      }
+    },
+
+    /**
+     * Load state from localStorage
+     */
+    loadFromLocalStorage(uuid) {
+      if (!uuid) {
+        console.warn('Cannot load: no conversation ID provided')
+        return false
+      }
+
+      try {
+        const key = `conversation_${uuid}`
+        const data = localStorage.getItem(key)
+
+        if (!data) {
+          return false
+        }
+
+        const parsed = JSON.parse(data)
+        this.deserializeState(parsed)
+        return true
+      } catch (error) {
+        console.error('Error loading conversation from localStorage:', error)
+        return false
+      }
+    },
+
+    /**
+     * Autosave current state
+     */
+    autosave() {
+      if (this.conversationId) {
+        this.saveToLocalStorage(this.conversationId)
       }
     }
   }

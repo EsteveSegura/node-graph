@@ -11,7 +11,7 @@ const router = createRouter({
       component: HomePage
     },
     {
-      path: '/t',
+      path: '/t/:uuid?',
       name: 'conversation',
       component: ConversationView
     }
