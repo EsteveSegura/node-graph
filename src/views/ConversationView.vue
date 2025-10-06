@@ -1,11 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import ConversationNode from '../components/ConversationNode'
 import InfiniteCanvas from '../components/InfiniteCanvas.vue'
 import SettingsModal from '../components/SettingsModal.vue'
 import { useConversationStore } from '../stores/conversation'
 import { useConversationId } from '../composables/useConversationId'
 
+const router = useRouter()
 const store = useConversationStore()
 const showSettings = ref(false)
 const { ensureConversationId } = useConversationId()
@@ -24,7 +26,18 @@ onMounted(() => {
 
   // Set the conversation ID for autosave
   store.setConversationId(uuid)
+
+  // Set initial document title
+  document.title = store.title || 'Untitled'
 })
+
+// Update document title when conversation title changes
+watch(
+  () => store.title,
+  (newTitle) => {
+    document.title = newTitle || 'Untitled'
+  }
+)
 
 const openSettings = () => {
   showSettings.value = true
@@ -33,12 +46,19 @@ const openSettings = () => {
 const closeSettings = () => {
   showSettings.value = false
 }
+
+const goBack = () => {
+  router.push('/')
+}
 </script>
 
 <template>
   <div class="conversation-view">
     <header class="app-header">
       <div class="header-left">
+        <button class="btn-back" @click="goBack" title="Back to home">
+          ← Back
+        </button>
         <h1>{{ store.title || 'Untitled' }}</h1>
       </div>
       <div class="header-right">
@@ -80,6 +100,12 @@ const closeSettings = () => {
   align-items: center;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .header-left h1 {
   font-size: 20px;
   margin: 0;
@@ -88,6 +114,26 @@ const closeSettings = () => {
 .header-right {
   display: flex;
   align-items: center;
+}
+
+.btn-back {
+  padding: 8px 16px;
+  border: 1px solid #505050;
+  border-radius: 6px;
+  background: #3a3a3a;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-back:hover {
+  background: #454545;
+  border-color: #606060;
 }
 
 .btn-settings {

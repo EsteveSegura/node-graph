@@ -28,6 +28,7 @@ const openConversation = (uuid) => {
 }
 
 onMounted(() => {
+  document.title = 'Conversation Graph'
   loadConversations()
 })
 </script>
