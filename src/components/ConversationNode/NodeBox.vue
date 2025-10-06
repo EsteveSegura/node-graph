@@ -43,6 +43,19 @@ const toggleExpand = () => {
   }
 }
 
+const isCopied = ref(false)
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(props.node.text || '')
+    isCopied.value = true
+    setTimeout(() => {
+      isCopied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
+
 const startEditing = () => {
   isEditing.value = true
 }
@@ -71,6 +84,14 @@ defineExpose({ nodeBoxEl })
       </span>
       <span class="node-id">{{ node.id }}</span>
       <div class="header-actions">
+        <button
+          v-if="shouldBeReadonly && !isEditing"
+          @click="copyToClipboard"
+          class="btn-copy"
+          :class="{ 'is-copied': isCopied }"
+        >
+          {{ isCopied ? '✓ Copied!' : '📋 Copy' }}
+        </button>
         <button
           v-if="shouldBeReadonly && !isEditing"
           @click="startEditing"
@@ -212,6 +233,7 @@ defineExpose({ nodeBoxEl })
   align-items: center;
 }
 
+.btn-copy,
 .btn-edit,
 .btn-delete {
   padding: 4px 10px;
@@ -224,10 +246,17 @@ defineExpose({ nodeBoxEl })
   transition: all 0.2s;
 }
 
+.btn-copy:hover,
 .btn-edit:hover,
 .btn-delete:hover:not(:disabled) {
   background: #454545;
   border-color: #606060;
+}
+
+.btn-copy.is-copied {
+  background: #1a4d1a;
+  border-color: #50c878;
+  color: #50c878;
 }
 
 .btn-delete {
