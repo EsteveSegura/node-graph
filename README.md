@@ -1,50 +1,85 @@
-# node-conversation-ui
+# Conversation Graph UI
 
-This template should help get you started developing with Vue 3 in Vite.
+A Vue 3 application that visualizes LLM conversations as a tree structure instead of linear chat. Create branches at any point to explore multiple conversation paths.
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Tree-based conversations**: Branch conversations at any point
+- **Visual graph layout**: Top-to-bottom tree with horizontal branching
+- **OpenAI integration**: Direct API calls to GPT models
+- **Persistent storage**: Conversations saved to localStorage
+- **Auto-generated titles**: AI-generated conversation titles
+- **Dark theme**: Blueprint-style grid background
 
-## Recommended Browser Setup
+## Prerequisites
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- Node.js (v16 or higher)
+- npm or yarn
+- OpenAI API key
 
-## Customize configuration
+## Installation
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+1. Clone the repository:
 
-## Project Setup
+```bash
+git clone <repository-url>
+cd node-conversation-ui
+```
 
-```sh
+2. Install dependencies:
+
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+3. Configure OpenAI API key:
 
-```sh
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` and add your API key:
+
+```env
+VITE_OPENAI_API_KEY=sk-proj-your_key_here 
+VITE_OPENAI_MODEL=gpt-4o-mini # OPTIONAL
+VITE_OPENAI_TEMPERATURE=0.7 # OPTIONAL
+VITE_OPENAI_MAX_TOKENS=1000 # OPTIONAL
+```
+
+## Usage
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-### Compile and Minify for Production
+Open your browser at `http://localhost:5173`
 
-```sh
-npm run build
+## Available Commands
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run linter
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+## How to Use
 
-```sh
-npm run test:unit
-```
+1. Click "New Conversation" from the home page
+2. Edit the system prompt (optional)
+3. Add user prompts by clicking "Branch: User Prompt"
+4. Generate LLM responses
+5. Branch from any LLM response to explore different conversation paths
 
-### Lint with [ESLint](https://eslint.org/)
+## Warning
 
-```sh
-npm run lint
-```
+⚠️ This implementation makes **client-side** API calls to OpenAI, exposing your API key in the browser. **Only use for local development/testing.**
+
+For production, implement a backend proxy to secure your API key.
+
+## License
+
+MIT
