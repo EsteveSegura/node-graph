@@ -9,7 +9,9 @@ export const useConversationStore = defineStore('conversation', {
     generatingNodes: new Set(), // Node IDs currently generating responses
     conversationId: null, // Current conversation UUID for autosave
     title: 'Untitled', // Conversation title
-    titleGenerated: false // Flag to track if title has been auto-generated
+    titleGenerated: false, // Flag to track if title has been auto-generated
+    createdAt: null, // ISO timestamp when conversation was created
+    updatedAt: null // ISO timestamp when conversation was last updated
   }),
 
   getters: {
@@ -39,6 +41,11 @@ export const useConversationStore = defineStore('conversation', {
       }
       this.nodes.push(systemNode)
       this.nodesById[systemNode.id] = systemNode
+
+      // Initialize timestamps for new conversation
+      const now = new Date().toISOString()
+      this.createdAt = now
+      this.updatedAt = now
     },
 
     addChild(parentId, childType) {
@@ -286,14 +293,18 @@ export const useConversationStore = defineStore('conversation', {
      * Serialize the current state to JSON-compatible object
      */
     serializeState() {
+      // Update the updatedAt timestamp on every save
+      this.updatedAt = new Date().toISOString()
+
       return {
         nodes: this.nodes,
         nodesById: this.nodesById,
         seq: this.seq,
         title: this.title,
         titleGenerated: this.titleGenerated,
-        version: 1,
-        timestamp: new Date().toISOString()
+        createdAt: this.createdAt,
+        updatedAt: this.updatedAt,
+        version: 1
       }
     },
 
@@ -311,6 +322,11 @@ export const useConversationStore = defineStore('conversation', {
       this.seq = data.seq || 0
       this.title = data.title || 'Untitled'
       this.titleGenerated = data.titleGenerated || false
+
+      // Restore timestamps with fallback for backward compatibility
+      const now = new Date().toISOString()
+      this.createdAt = data.createdAt || data.timestamp || now
+      this.updatedAt = data.updatedAt || data.timestamp || now
 
       // Clear transient state
       this.generatingNodes.clear()
