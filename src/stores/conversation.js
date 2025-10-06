@@ -7,7 +7,9 @@ export const useConversationStore = defineStore('conversation', {
     nodesById: {},
     seq: 0,
     generatingNodes: new Set(), // Node IDs currently generating responses
-    conversationId: null // Current conversation UUID for autosave
+    conversationId: null, // Current conversation UUID for autosave
+    title: 'Untitled', // Conversation title
+    titleGenerated: false // Flag to track if title has been auto-generated
   }),
 
   getters: {
@@ -213,6 +215,13 @@ export const useConversationStore = defineStore('conversation', {
         // Autosave after successful generation
         // (note: updateText already calls autosave, but we ensure it here too)
 
+        // Trigger title generation in background after first LLM response
+        if (!this.titleGenerated) {
+          this.generateConversationTitle().catch(err => {
+            console.warn('Failed to auto-generate title:', err)
+          })
+        }
+
       } catch (error) {
         console.error('Error generating LLM response:', error)
         this.updateText(nodeId, `❌ Error: ${error.message}`)
@@ -220,6 +229,49 @@ export const useConversationStore = defineStore('conversation', {
       } finally {
         // Remove from generating set
         this.generatingNodes.delete(nodeId)
+      }
+    },
+
+    /**
+     * Auto-generates a conversation title using the LLM
+     * Runs in background after the first LLM response
+     */
+    async generateConversationTitle() {
+      // Only generate once
+      if (this.titleGenerated) {
+        return
+      }
+
+      try {
+        // Build conversation context from all nodes
+        const contextParts = []
+
+        for (const node of this.nodes) {
+          if (node.type === 'system') {
+            contextParts.push(`[System]: ${node.text}`)
+          } else if (node.type === 'user') {
+            contextParts.push(`[User]: ${node.text}`)
+          } else if (node.type === 'llm') {
+            contextParts.push(`[Assistant]: ${node.text}`)
+          }
+        }
+
+        const conversationContext = contextParts.join('\n')
+
+        // Call OpenAI to generate title
+        const { generateTitle } = useOpenAI()
+        const newTitle = await generateTitle(conversationContext)
+
+        // Update state
+        this.title = newTitle
+        this.titleGenerated = true
+
+        // Save to localStorage
+        this.autosave()
+
+      } catch (error) {
+        console.error('Error generating conversation title:', error)
+        // Don't throw - title generation is non-critical
       }
     },
 
@@ -238,6 +290,8 @@ export const useConversationStore = defineStore('conversation', {
         nodes: this.nodes,
         nodesById: this.nodesById,
         seq: this.seq,
+        title: this.title,
+        titleGenerated: this.titleGenerated,
         version: 1,
         timestamp: new Date().toISOString()
       }
@@ -255,6 +309,8 @@ export const useConversationStore = defineStore('conversation', {
       this.nodes = data.nodes || []
       this.nodesById = data.nodesById || {}
       this.seq = data.seq || 0
+      this.title = data.title || 'Untitled'
+      this.titleGenerated = data.titleGenerated || false
 
       // Clear transient state
       this.generatingNodes.clear()

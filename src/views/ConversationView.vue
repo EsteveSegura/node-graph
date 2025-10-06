@@ -39,7 +39,7 @@ const closeSettings = () => {
   <div class="conversation-view">
     <header class="app-header">
       <div class="header-left">
-        <h1>Conversation Graph</h1>
+        <h1>{{ store.title || 'Untitled' }}</h1>
       </div>
       <div class="header-right">
         <button class="btn-settings" @click="openSettings">
