@@ -27,6 +27,22 @@ const shouldBeReadonly = computed(() =>
 const isEditing = ref(false)
 const isRootNode = computed(() => props.node.type === 'system' && !props.node.parentId)
 
+const MAX_COLLAPSED_LENGTH = 300
+const isExpanded = ref(false)
+const isLongText = computed(() => (props.node.text || '').length > MAX_COLLAPSED_LENGTH)
+const displayText = computed(() => {
+  if (!isLongText.value || isExpanded.value) {
+    return props.node.text || 'No content...'
+  }
+  return (props.node.text || '').substring(0, MAX_COLLAPSED_LENGTH) + '...'
+})
+
+const toggleExpand = () => {
+  if (isLongText.value) {
+    isExpanded.value = !isExpanded.value
+  }
+}
+
 const startEditing = () => {
   isEditing.value = true
 }
@@ -87,8 +103,13 @@ defineExpose({ nodeBoxEl })
     <div
       v-else
       class="node-content-readonly"
+      :class="{ 'is-expandable': isLongText, 'is-expanded': isExpanded }"
+      @click="toggleExpand"
     >
-      {{ node.text || 'No content...' }}
+      <div class="readonly-text">{{ displayText }}</div>
+      <div v-if="isLongText" class="expand-indicator">
+        {{ isExpanded ? '▲ Click to collapse' : '▼ Click to expand' }}
+      </div>
     </div>
 
     <div class="node-actions">
@@ -255,6 +276,34 @@ defineExpose({ nodeBoxEl })
   color: #a0a0a0;
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+.node-content-readonly.is-expandable {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.node-content-readonly.is-expandable:hover {
+  background: #2a2a2a;
+  border-color: #404040;
+}
+
+.readonly-text {
+  margin-bottom: 8px;
+}
+
+.expand-indicator {
+  font-size: 12px;
+  color: #4a90e2;
+  font-weight: 500;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid #353535;
+  user-select: none;
+}
+
+.node-content-readonly.is-expandable:hover .expand-indicator {
+  color: #5aa0f2;
 }
 
 .node-actions {
