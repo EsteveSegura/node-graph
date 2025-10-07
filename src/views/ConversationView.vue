@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import ConversationNode from '../components/ConversationNode'
 import InfiniteCanvas from '../components/InfiniteCanvas.vue'
 import SettingsModal from '../components/SettingsModal.vue'
@@ -8,14 +8,16 @@ import { useConversationStore } from '../stores/conversation'
 import { useConversationId } from '../composables/useConversationId'
 
 const router = useRouter()
-const route = useRoute()
 const store = useConversationStore()
 const showSettings = ref(false)
 const { ensureConversationId } = useConversationId()
 
-const loadConversation = () => {
+onMounted(() => {
   // Get or generate conversation UUID
   const uuid = ensureConversationId()
+
+  // Clear the store state before loading
+  store.$reset()
 
   // Try to load existing conversation from localStorage
   const loaded = store.loadFromLocalStorage(uuid)
@@ -30,19 +32,7 @@ const loadConversation = () => {
 
   // Set initial document title
   document.title = store.title || 'Untitled'
-}
-
-onMounted(() => {
-  loadConversation()
 })
-
-// Watch for route changes (when navigating between conversations)
-watch(
-  () => route.params.uuid,
-  () => {
-    loadConversation()
-  }
-)
 
 // Update document title when conversation title changes
 watch(
