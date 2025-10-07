@@ -2,6 +2,8 @@
 import { useNodeLabels } from '../../composables/useNodeLabels'
 import { useConversationStore } from '../../stores/conversation'
 import { computed, ref } from 'vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 const props = defineProps({
   node: {
@@ -27,6 +29,12 @@ const shouldBeReadonly = computed(() =>
 const isEditing = ref(false)
 const isRootNode = computed(() => props.node.type === 'system' && !props.node.parentId)
 
+// Configure marked
+marked.setOptions({
+  breaks: true,
+  gfm: true
+})
+
 const MAX_COLLAPSED_LENGTH = 300
 const isExpanded = ref(false)
 const isLongText = computed(() => (props.node.text || '').length > MAX_COLLAPSED_LENGTH)
@@ -35,6 +43,11 @@ const displayText = computed(() => {
     return props.node.text || 'No content...'
   }
   return (props.node.text || '').substring(0, MAX_COLLAPSED_LENGTH) + '...'
+})
+
+const displayHtml = computed(() => {
+  const rawHtml = marked.parse(displayText.value)
+  return DOMPurify.sanitize(rawHtml)
 })
 
 const toggleExpand = () => {
@@ -127,7 +140,7 @@ defineExpose({ nodeBoxEl })
       :class="{ 'is-expandable': isLongText, 'is-expanded': isExpanded }"
       @click="toggleExpand"
     >
-      <div class="readonly-text">{{ displayText }}</div>
+      <div class="readonly-text markdown-content" v-html="displayHtml"></div>
       <div v-if="isLongText" class="expand-indicator">
         {{ isExpanded ? '▲ Click to collapse' : '▼ Click to expand' }}
       </div>
@@ -299,7 +312,7 @@ defineExpose({ nodeBoxEl })
   border: 1px solid #353535;
   border-radius: 4px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.3;
   min-height: 80px;
   background: #252525;
   color: #a0a0a0;
@@ -399,5 +412,124 @@ defineExpose({ nodeBoxEl })
 .node-box.is-generating .node-content {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* Markdown content styles */
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4),
+.markdown-content :deep(h5),
+.markdown-content :deep(h6) {
+  color: #e0e0e0;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.markdown-content :deep(h1) { font-size: 1.8em; }
+.markdown-content :deep(h2) { font-size: 1.5em; }
+.markdown-content :deep(h3) { font-size: 1.3em; }
+.markdown-content :deep(h4) { font-size: 1.1em; }
+
+.markdown-content :deep(p) {
+  margin: 4px 0;
+  line-height: 1.3;
+}
+
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin: 4px 0;
+  padding-left: 24px;
+}
+
+.markdown-content :deep(li) {
+  margin: 0;
+  line-height: 1.3;
+}
+
+.markdown-content :deep(li p) {
+  margin: 0;
+}
+
+.markdown-content :deep(code) {
+  background: #1a1a1a;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #ff6b6b;
+}
+
+.markdown-content :deep(pre) {
+  background: #1a1a1a;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+.markdown-content :deep(pre code) {
+  background: transparent;
+  padding: 0;
+  color: #a0e0a0;
+}
+
+.markdown-content :deep(blockquote) {
+  border-left: 3px solid #505050;
+  padding-left: 12px;
+  margin: 6px 0;
+  color: #909090;
+  font-style: italic;
+}
+
+.markdown-content :deep(a) {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+.markdown-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-content :deep(strong) {
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+.markdown-content :deep(em) {
+  font-style: italic;
+}
+
+.markdown-content :deep(hr) {
+  border: none;
+  border-top: 1px solid #404040;
+  margin: 8px 0;
+}
+
+.markdown-content :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 6px 0;
+}
+
+.markdown-content :deep(th),
+.markdown-content :deep(td) {
+  border: 1px solid #404040;
+  padding: 8px;
+  text-align: left;
+}
+
+.markdown-content :deep(th) {
+  background: #1a1a1a;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.markdown-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 6px 0;
 }
 </style>
