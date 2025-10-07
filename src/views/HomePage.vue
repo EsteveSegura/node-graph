@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConversationList } from '../composables/useConversationList'
+import exampleConversation from '../assets/conversation_4866bb4e-5616-4879-9e51-60225b8fbfda.json'
 
 const router = useRouter()
 const { getConversationList, deleteConversation, formatRelativeTime } = useConversationList()
@@ -10,6 +11,16 @@ const conversations = ref([])
 
 const loadConversations = () => {
   conversations.value = getConversationList()
+}
+
+const loadExampleConversation = () => {
+  const exampleUUID = '4866bb4e-5616-4879-9e51-60225b8fbfda'
+  const key = `conversation_${exampleUUID}`
+
+  // Check if example conversation already exists
+  if (!localStorage.getItem(key)) {
+    localStorage.setItem(key, JSON.stringify(exampleConversation))
+  }
 }
 
 const createNewConversation = () => {
@@ -29,6 +40,10 @@ const openConversation = (uuid) => {
 
 onMounted(() => {
   document.title = 'Conversation Graph'
+
+  // Load example conversation if no conversations exist
+  loadExampleConversation()
+
   loadConversations()
 })
 </script>
