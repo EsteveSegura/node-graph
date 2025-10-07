@@ -43,10 +43,22 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
       svgSize.width = containerEl.offsetWidth
       svgSize.height = containerEl.offsetHeight
 
-      const containerRect = containerEl.getBoundingClientRect()
-      const parentRect = parentEl.getBoundingClientRect()
-      const parentCenterX = parentRect.left - containerRect.left + parentRect.width / 2
-      const parentBottomY = parentRect.bottom - containerRect.top
+      // Helper to get position relative to container
+      const getRelativePosition = (el) => {
+        let x = 0, y = 0
+        let current = el
+        while (current && current !== containerEl) {
+          x += current.offsetLeft
+          y += current.offsetTop
+          current = current.offsetParent
+        }
+        return { x, y }
+      }
+
+      // Get parent position relative to container
+      const parentPos = getRelativePosition(parentEl)
+      const parentCenterX = parentPos.x + parentEl.offsetWidth / 2
+      const parentBottomY = parentPos.y + parentEl.offsetHeight
 
       // NOTE: direct children are components with "child-column" class at their root
       const childContainers = containerEl.querySelectorAll(':scope > .children-container > .child-column')
@@ -62,10 +74,13 @@ export function useNodeConnectors(node, containerRef, parentBoxRef) {
       }
 
       const childCentersX = childBoxes.map(b => {
-        const r = b.getBoundingClientRect()
-        return r.left - containerRect.left + r.width / 2
+        const pos = getRelativePosition(b)
+        return pos.x + b.offsetWidth / 2
       })
-      const childTopYs = childBoxes.map(b => b.getBoundingClientRect().top - containerRect.top)
+      const childTopYs = childBoxes.map(b => {
+        const pos = getRelativePosition(b)
+        return pos.y
+      })
 
       // Bar height: slightly above the top of the child(ren)
       const barY = Math.min(...childTopYs) - CONNECTOR_OFFSET_UP

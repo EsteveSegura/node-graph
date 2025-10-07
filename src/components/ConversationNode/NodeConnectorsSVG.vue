@@ -31,6 +31,7 @@ defineProps({
       :x2="edges.trunk.x2"
       :y2="edges.trunk.y2"
       class="edge-line"
+      vector-effect="non-scaling-stroke"
     />
     <!-- Barra horizontal -->
     <line
@@ -40,6 +41,7 @@ defineProps({
       :x2="edges.bar.x2"
       :y2="edges.bar.y2"
       class="edge-line"
+      vector-effect="non-scaling-stroke"
     />
     <!-- Ramitas a cada hijo -->
     <line
@@ -50,6 +52,7 @@ defineProps({
       :x2="b.x2"
       :y2="b.y2"
       class="edge-line"
+      vector-effect="non-scaling-stroke"
     />
   </svg>
 </template>
