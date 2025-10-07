@@ -12,7 +12,15 @@ const store = useConversationStore()
 const showSettings = ref(false)
 const { ensureConversationId } = useConversationId()
 
+// Check if OpenAI API key is configured
+const hasApiKey = ref(false)
+const checkApiKey = () => {
+  const apiKey = localStorage.getItem('VITE_OPENAI_API_KEY') || import.meta.env.VITE_OPENAI_API_KEY
+  hasApiKey.value = apiKey && apiKey !== 'sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+}
+
 onMounted(() => {
+  checkApiKey()
   // Get or generate conversation UUID
   const uuid = ensureConversationId()
 
@@ -48,6 +56,7 @@ const openSettings = () => {
 
 const closeSettings = () => {
   showSettings.value = false
+  checkApiKey()
 }
 
 const goBack = () => {
@@ -57,6 +66,10 @@ const goBack = () => {
 
 <template>
   <div class="conversation-view">
+    <div v-if="!hasApiKey" class="api-key-warning" @click="openSettings">
+      ⚠️ Configure your OpenAI API key in Settings
+    </div>
+
     <header class="app-header">
       <div class="header-left">
         <button class="btn-back" @click="goBack" title="Back to home">
@@ -165,5 +178,21 @@ const goBack = () => {
   overflow: hidden;
   background: #1a1a1a;
   min-height: 0;
+}
+
+.api-key-warning {
+  width: 100%;
+  background: #dc3545;
+  color: white;
+  padding: 12px 24px;
+  text-align: center;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.api-key-warning:hover {
+  background: #c82333;
 }
 </style>
